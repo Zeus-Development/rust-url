@@ -26,9 +26,11 @@ bencher = "0.1"
 wasm-bindgen-test = "0.3"
 
 [dependencies]
-form_urlencoded = { version = "1.2.2", path = "../form_urlencoded", default-features = false, features = ["alloc"] }
-idna = { version = "1.1.0", path = "../idna", default-features = false, features = ["alloc", "compiled_data"] }
-percent-encoding = { version = "2.3.2", path = "../percent_encoding", default-features = false, features = ["alloc"] }
+# VIPER-PATCH(registry-deps): url's sibling crates come from crates.io at
+# the versions url 2.5.8 was published with, never from this workspace.
+form_urlencoded = { version = "=1.2.2", default-features = false, features = ["alloc"] }
+idna = { version = "=1.1.0", default-features = false, features = ["alloc", "compiled_data"] }
+percent-encoding = { version = "=2.3.2", default-features = false, features = ["alloc"] }
 serde = { version = "1.0", optional = true, default-features = false }
 serde_derive = { version = "1.0", optional = true, default-features = false }
 
