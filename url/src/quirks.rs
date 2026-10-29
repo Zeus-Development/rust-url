@@ -293,7 +293,10 @@ pub fn set_pathname(url: &mut Url, new_pathname: &str) {
         url.set_path(new_pathname)
     } else if SchemeType::from(url.scheme()).is_special()
         || !new_pathname.is_empty()
-        || !url.has_host()
+        // VIPER-PATCH(path-setter-null-host): the URL Standard's path start
+        // state appends an empty segment for an empty value only when url's
+        // host is null, not when it is the empty string (foo:// has none).
+        || !url.has_authority()
     {
         let mut path_to_set = String::from("/");
         path_to_set.push_str(new_pathname);

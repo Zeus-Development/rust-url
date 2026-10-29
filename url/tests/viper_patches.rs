@@ -144,3 +144,14 @@ fn setters_keep_the_dot_prefix_rule() {
     url::quirks::set_hostname(&mut url, "").unwrap();
     assert_eq!(url.as_str(), "non-spec:////p");
 }
+
+// VIPER-PATCH(path-setter-null-host)
+#[test]
+fn empty_pathname_appends_a_segment_only_for_a_null_host() {
+    let mut url = Url::parse("foo:///some/path").unwrap();
+    url::quirks::set_pathname(&mut url, "");
+    assert_eq!(url.as_str(), "foo://");
+    let mut url = Url::parse("foo:/some/path").unwrap();
+    url::quirks::set_pathname(&mut url, "");
+    assert_eq!(url.as_str(), "foo:/");
+}
