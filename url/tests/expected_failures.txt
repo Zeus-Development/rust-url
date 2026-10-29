@@ -1,16 +1,6 @@
 # VIPER-PATCH(wpt-vectors): the cases url 2.5.8 fails in web-platform-tests at
 # a50a958a6e4c822d7330aa08447f345e85c67c99; each patch removes the cases it fixes.
 <..> against <abc://x/y/z/C:/>
-<///test> against <http://example.org/>
-<///\\//\\//test> against <http://example.org/>
-<///example.org/path> against <http://example.org/>
-<///example.org/../path> against <http://example.org/>
-<///example.org/../../> against <http://example.org/>
-<///example.org/../path/../../> against <http://example.org/>
-<///example.org/../path/../../path> against <http://example.org/>
-<\\a> against <foo://foo/a>
-<\\/a> against <foo://foo/a>
-<\\\\a> against <foo://foo/a>
 <foo:///some/path> set pathname to <>
 <non-spec:/> set pathname to </.//p>
 <non-spec:/> set pathname to </..//p>

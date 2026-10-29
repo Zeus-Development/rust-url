@@ -776,13 +776,20 @@ impl Parser<'_> {
                 })
             }
             Some('#') => self.fragment_only(base_url, input),
-            Some('/') | Some('\\') => {
-                let (slashes_count, remaining) = input.count_matching(|c| matches!(c, '/' | '\\'));
+            // VIPER-PATCH(relative-slash): in the URL Standard's relative state
+            // a \\ is a slash only when url is special.
+            Some('/') | Some('\\') if first_char == Some('/') || scheme_type.is_special() => {
+                // VIPER-PATCH(relative-slash): the relative slash state goes to
+                // the special authority ignore slashes state, which skips every
+                // further / and \\, when url is special, and to the authority
+                // state after exactly "//" otherwise.
+                let is_slash = |c| c == '/' || (c == '\\' && scheme_type.is_special());
+                let (slashes_count, remaining) = input.count_matching(is_slash);
                 if slashes_count >= 2 {
                     self.log_violation_if(SyntaxViolation::ExpectedDoubleSlash, || {
                         input
                             .clone()
-                            .take_while(|&c| matches!(c, '/' | '\\'))
+                            .take_while(|&c| is_slash(c))
                             .collect::<String>()
                             != "//"
                     });
@@ -790,10 +797,11 @@ impl Parser<'_> {
                     debug_assert!(base_url.byte_at(scheme_end) == b':');
                     self.serialization
                         .push_str(base_url.slice(..scheme_end + 1));
-                    if let Some(after_prefix) = input.split_prefix("//") {
-                        return self.after_double_slash(after_prefix, scheme_type, scheme_end);
+                    if scheme_type.is_special() {
+                        return self.after_double_slash(remaining, scheme_type, scheme_end);
                     }
-                    return self.after_double_slash(remaining, scheme_type, scheme_end);
+                    let after_prefix = input.split_prefix("//").unwrap_or(remaining);
+                    return self.after_double_slash(after_prefix, scheme_type, scheme_end);
                 }
                 let path_start = base_url.path_start;
                 self.serialization.push_str(base_url.slice(..path_start));

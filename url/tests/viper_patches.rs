@@ -95,3 +95,17 @@ fn file_url_keeps_base_host_before_a_drive_letter() {
     assert_eq!(href("/", Some("file://h/C:/a/b")), "file://h/C:/");
     assert_eq!(href("C|", Some("file:///dir/file")), "file:///C:");
 }
+
+// VIPER-PATCH(relative-slash)
+#[test]
+fn relative_slashes_follow_whether_url_is_special() {
+    let base = Some("http://example.org/");
+    assert_eq!(href("///test", base), "http://test/");
+    assert_eq!(href("///\\//\\//test", base), "http://test/");
+    assert_eq!(href("//test", base), "http://test/");
+    let base = Some("foo://foo/a");
+    assert_eq!(href("\\a", base), "foo://foo/\\a");
+    assert_eq!(href("\\/a", base), "foo://foo/\\/a");
+    assert_eq!(href("//a", base), "foo://a");
+    assert_eq!(href("/a", base), "foo://foo/a");
+}
