@@ -109,3 +109,10 @@ fn relative_slashes_follow_whether_url_is_special() {
     assert_eq!(href("//a", base), "foo://a");
     assert_eq!(href("/a", base), "foo://foo/a");
 }
+
+// VIPER-PATCH(file-only-drive-letter)
+#[test]
+fn drive_letter_is_kept_for_file_urls_only() {
+    assert_eq!(href("..", Some("abc://x/y/z/C:/")), "abc://x/y/z/");
+    assert_eq!(href("..", Some("file:///C:/")), "file:///C:/");
+}
