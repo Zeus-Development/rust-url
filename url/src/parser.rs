@@ -568,16 +568,21 @@ impl Parser<'_> {
                 let host_start = "file://".len();
                 let mut host_end = host_start;
                 let mut host = HostInternal::None;
-                if !starts_with_windows_drive_letter_segment(&input_after_first_char) {
-                    if let Some(base_url) = base_file_url {
+                // VIPER-PATCH(file-base-host): the URL Standard's file slash
+                // state sets url's host to base's host, then appends base's
+                // path[0] when it is a normalized Windows drive letter and the
+                // input does not start with one.
+                if let Some(base_url) = base_file_url {
+                    if let Some(host_str) = base_url.host_str() {
+                        self.serialization.push_str(host_str);
+                        host_end = self.serialization.len();
+                        host = base_url.host;
+                    }
+                    if !starts_with_windows_drive_letter_segment(&input_after_first_char) {
                         let first_segment = base_url.path_segments().unwrap().next().unwrap();
                         if is_normalized_windows_drive_letter(first_segment) {
                             self.serialization.push('/');
                             self.serialization.push_str(first_segment);
-                        } else if let Some(host_str) = base_url.host_str() {
-                            self.serialization.push_str(host_str);
-                            host_end = self.serialization.len();
-                            host = base_url.host;
                         }
                     }
                 }
@@ -673,21 +678,33 @@ impl Parser<'_> {
                             remaining,
                         )
                     } else {
-                        self.serialization.push_str("file:///");
+                        // VIPER-PATCH(file-base-host): the URL Standard's file
+                        // state keeps base's host and empties the path when the
+                        // input starts with a Windows drive letter.
+                        self.serialization.push_str("file://");
                         let scheme_end = "file".len() as u32;
-                        let path_start = "file://".len();
+                        let host_start = to_u32(self.serialization.len())?;
+                        let host = match base_url.host_str() {
+                            Some(host_str) => {
+                                self.serialization.push_str(host_str);
+                                base_url.host
+                            }
+                            None => HostInternal::None,
+                        };
+                        let path_start = self.serialization.len();
+                        self.serialization.push('/');
                         let remaining =
                             self.parse_path(SchemeType::File, &mut false, path_start, input);
                         let (query_start, fragment_start) =
                             self.parse_query_and_fragment(SchemeType::File, scheme_end, remaining)?;
-                        let path_start = path_start as u32;
+                        let path_start = to_u32(path_start)?;
                         Ok(Url {
                             serialization: self.serialization,
                             scheme_end,
-                            username_end: path_start,
-                            host_start: path_start,
+                            username_end: host_start,
+                            host_start,
                             host_end: path_start,
-                            host: HostInternal::None,
+                            host,
                             port: None,
                             path_start,
                             query_start,
@@ -1351,10 +1368,12 @@ impl Parser<'_> {
                             }
                         }
                         // If url’s host is neither the empty string nor null,
-                        // validation error, set url’s host to the empty string.
+                        // validation error.
+                        // VIPER-PATCH(file-base-host): the URL Standard's path
+                        // state no longer sets url's host to the empty string
+                        // here; the crate still reports the violation.
                         if *has_host {
                             self.log_violation(SyntaxViolation::FileWithHostAndWindowsDrive);
-                            *has_host = false; // FIXME account for this in callers
                         }
                     }
                 }

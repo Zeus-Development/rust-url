@@ -83,3 +83,15 @@ fn file_url_keeps_leading_empty_segments() {
     assert_eq!(href("file:///a/b", None), "file:///a/b");
     assert_eq!(href("file://host/a", None), "file://host/a");
 }
+
+// VIPER-PATCH(file-base-host)
+#[test]
+fn file_url_keeps_base_host_before_a_drive_letter() {
+    let base = Some("file://host/dir/file");
+    assert_eq!(href("C|", base), "file://host/C:");
+    assert_eq!(href("C|/", base), "file://host/C:/");
+    assert_eq!(href("/c:/foo/bar", base), "file://host/c:/foo/bar");
+    assert_eq!(href("file:C:/", Some("file://host/")), "file://host/C:/");
+    assert_eq!(href("/", Some("file://h/C:/a/b")), "file://h/C:/");
+    assert_eq!(href("C|", Some("file:///dir/file")), "file:///C:");
+}
