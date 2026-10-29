@@ -126,3 +126,21 @@ fn port_setter_with_only_tabs_and_newlines_keeps_the_port() {
     url::quirks::set_port(&mut url, "").unwrap();
     assert_eq!(url.port(), None);
 }
+
+// VIPER-PATCH(path-dot-prefix)
+#[test]
+fn setters_keep_the_dot_prefix_rule() {
+    let mut url = Url::parse("non-spec:/").unwrap();
+    url::quirks::set_pathname(&mut url, "//p");
+    assert_eq!(url.as_str(), "non-spec:/.//p");
+    assert_eq!(url.path(), "//p");
+    url::quirks::set_pathname(&mut url, "p");
+    assert_eq!(url.as_str(), "non-spec:/p");
+    let mut url = Url::parse("non-spec:/.//p?q#f").unwrap();
+    url::quirks::set_hostname(&mut url, "h").unwrap();
+    assert_eq!(url.as_str(), "non-spec://h//p?q#f");
+    assert_eq!(url.query(), Some("q"));
+    let mut url = Url::parse("non-spec:/.//p").unwrap();
+    url::quirks::set_hostname(&mut url, "").unwrap();
+    assert_eq!(url.as_str(), "non-spec:////p");
+}

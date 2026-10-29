@@ -1760,6 +1760,24 @@ impl Url {
                 );
             }
         });
+        // VIPER-PATCH(path-dot-prefix): the URL Standard serializes "/." before
+        // the path when url's host is null and the path starts with an empty
+        // segment, as the parser does; the new path may add or end that case.
+        if !cannot_be_a_base {
+            let scheme_end = self.scheme_end as usize;
+            let path_start = self.path_start as usize;
+            if path_start == scheme_end + 1 && self.serialization[path_start..].starts_with("//") {
+                self.serialization.insert_str(path_start, "/.");
+                self.path_start += 2;
+            } else if path_start == scheme_end + 3
+                && &self.serialization[scheme_end..path_start] == ":/."
+                && !self.serialization[path_start..].starts_with("//")
+            {
+                self.serialization
+                    .replace_range(scheme_end + 1..path_start, "");
+                self.path_start -= 2;
+            }
+        }
         self.restore_after_path(old_after_path_pos, &after_path);
     }
 
@@ -2058,7 +2076,12 @@ impl Url {
 
     /// opt_new_port: None means leave unchanged, Some(None) means remove any port number.
     fn set_host_internal(&mut self, host: Host<Cow<'_, str>>, opt_new_port: Option<Option<u16>>) {
-        let old_suffix_pos = if opt_new_port.is_some() {
+        // VIPER-PATCH(path-dot-prefix): a URL whose host was null drops the
+        // "/." before its path once it has a host.
+        let had_dot_prefix = !self.has_authority()
+            && self.path_start == self.host_end + 2
+            && self.slice(self.host_end..self.path_start) == "/.";
+        let old_suffix_pos = if opt_new_port.is_some() || had_dot_prefix {
             self.path_start
         } else {
             self.host_end
