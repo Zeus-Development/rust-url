@@ -17,13 +17,13 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 pub fn url_origin(url: &Url) -> Origin {
     let scheme = url.scheme();
     match scheme {
-        "blob" => {
-            let result = Url::parse(url.path());
-            match result {
-                Ok(ref url) => url_origin(url),
-                Err(_) => Origin::new_opaque(),
-            }
-        }
+        // VIPER-PATCH(blob-origin): the URL Standard's origin of a blob URL is
+        // its path URL's origin only when that URL's scheme is http, https or
+        // file; any other path URL gives an opaque origin.
+        "blob" => match Url::parse(url.path()) {
+            Ok(ref url) if matches!(url.scheme(), "http" | "https" | "file") => url_origin(url),
+            _ => Origin::new_opaque(),
+        },
         "ftp" | "http" | "https" | "ws" | "wss" => Origin::Tuple(
             scheme.to_owned(),
             url.host().unwrap().to_owned(),

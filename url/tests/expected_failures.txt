@@ -35,10 +35,6 @@
 <file:///.//> against <file:////>
 <file:.//p>
 <file:/.//p>
-<blob:blob:https://example.org/>
-<blob:ftp://host/path>
-<blob:ws://example.org/>
-<blob:wss://example.org/>
 <///test> against <http://example.org/>
 <///\\//\\//test> against <http://example.org/>
 <///example.org/path> against <http://example.org/>

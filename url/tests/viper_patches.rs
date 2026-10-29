@@ -40,3 +40,24 @@ fn opaque_path_space_before_query_or_fragment_is_percent_encoded() {
     url::quirks::set_hash(&mut url, "");
     assert_eq!(url.as_str(), "sc:space %20");
 }
+
+// VIPER-PATCH(blob-origin)
+#[test]
+fn blob_origin_is_its_path_origin_only_for_http_https_and_file() {
+    let origin = |input: &str| Url::parse(input).unwrap().origin().ascii_serialization();
+    assert_eq!(
+        origin("blob:https://example.org:8443/x"),
+        "https://example.org:8443"
+    );
+    assert_eq!(origin("blob:http://example.org/x"), "http://example.org");
+    for opaque in [
+        "blob:blob:https://example.org/",
+        "blob:ftp://host/path",
+        "blob:ws://example.org/",
+        "blob:wss://example.org/",
+        "blob:file:///x",
+        "blob:not a url",
+    ] {
+        assert_eq!(origin(opaque), "null", "{}", opaque);
+    }
+}
