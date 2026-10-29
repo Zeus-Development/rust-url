@@ -286,13 +286,9 @@ impl<'i> Input<'i> {
     fn next_utf8(&mut self) -> Option<(char, &'i str)> {
         loop {
             let utf8 = self.chars.as_str();
-            match self.chars.next() {
-                Some(c) => {
-                    if !ascii_tab_or_new_line(c) {
-                        return Some((c, &utf8[..c.len_utf8()]));
-                    }
-                }
-                None => return None,
+            let c = self.chars.next()?;
+            if !ascii_tab_or_new_line(c) {
+                return Some((c, &utf8[..c.len_utf8()]));
             }
         }
     }
@@ -436,13 +432,7 @@ impl Parser<'_> {
         match scheme_type {
             SchemeType::File => {
                 self.log_violation_if(ExpectedFileDoubleSlash, || !input.starts_with("//"));
-                let base_file_url = self.base_url.and_then(|base| {
-                    if base.scheme() == "file" {
-                        Some(base)
-                    } else {
-                        None
-                    }
-                });
+                let base_file_url = self.base_url.filter(|base| base.scheme() == "file");
                 self.serialization.clear();
                 self.parse_file(input, scheme_type, base_file_url)
             }
@@ -530,9 +520,8 @@ impl Parser<'_> {
                 self.serialization.push_str("file://");
                 let scheme_end = "file".len() as u32;
                 let host_start = "file://".len() as u32;
-                let (path_start, mut host, remaining) =
-                    self.parse_file_host(input_after_next_char)?;
-                let mut host_end = to_u32(self.serialization.len())?;
+                let (path_start, host, remaining) = self.parse_file_host(input_after_next_char)?;
+                let host_end = to_u32(self.serialization.len())?;
                 let mut has_host = !matches!(host, HostInternal::None);
                 let remaining = if path_start {
                     self.parse_path_start(SchemeType::File, &mut has_host, remaining)
@@ -542,14 +531,9 @@ impl Parser<'_> {
                     self.parse_path(SchemeType::File, &mut has_host, path_start, remaining)
                 };
 
-                // For file URLs that have a host and whose path starts
-                // with the windows drive letter we just remove the host.
-                if !has_host {
-                    self.serialization
-                        .drain(host_start as usize..host_end as usize);
-                    host_end = host_start;
-                    host = HostInternal::None;
-                }
+                // VIPER-PATCH(file-drive-host): upstream rust-url 00a6ce5 (#1127)
+                // by msrd0, MIT OR Apache-2.0: a file host stays when the path
+                // starts with a Windows drive letter.
                 let (query_start, fragment_start) =
                     self.parse_query_and_fragment(scheme_type, scheme_end, remaining)?;
                 return Ok(Url {
