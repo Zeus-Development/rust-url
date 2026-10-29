@@ -67,15 +67,17 @@ fn test_relative_empty() {
     assert_eq!(url.as_str(), "sc://%C3%B1");
 }
 
+// VIPER-PATCH(opaque-path-space): the URL Standard encodes an opaque path's
+// last space before ? or # as %20 and strips nothing when they go.
 #[test]
 fn test_strip_trailing_spaces_from_opaque_path() {
     let mut url: Url = "data:space   ?query".parse().unwrap();
     url.set_query(None);
-    assert_eq!(url.as_str(), "data:space");
+    assert_eq!(url.as_str(), "data:space  %20");
 
     let mut url: Url = "data:space   #hash".parse().unwrap();
     url.set_fragment(None);
-    assert_eq!(url.as_str(), "data:space");
+    assert_eq!(url.as_str(), "data:space  %20");
 }
 
 #[test]

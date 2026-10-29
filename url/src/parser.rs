@@ -1416,6 +1416,15 @@ impl Parser<'_> {
                 Some(('?', _)) | Some(('#', _)) if self.context == Context::UrlParser => {
                     return input_before_c
                 }
+                // VIPER-PATCH(opaque-path-space): the URL Standard's opaque path
+                // state appends a space as %20 when the rest of the input starts
+                // with ? or #, so the path never ends in a space before them.
+                Some((' ', _))
+                    if self.context == Context::UrlParser
+                        && matches!(input.clone().next(), Some('?') | Some('#')) =>
+                {
+                    self.serialization.push_str("%20");
+                }
                 Some((c, utf8_c)) => {
                     self.check_url_code_point(c, &input);
                     self.serialization

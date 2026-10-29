@@ -1,11 +1,6 @@
 # VIPER-PATCH(wpt-vectors): the cases url 2.5.8 fails in web-platform-tests at
 # a50a958a6e4c822d7330aa08447f345e85c67c99; each patch removes the cases it fixes.
 <file:///w|/m>
-<non-special:opaque  ?hi>
-<non-special:opaque  #hi>
-<non-special:opaque \t\t  \t#hi>
-<non-special:opaque \t\t  #hi>
-<non-special:opaque\t\t  \r #hi>
 </> against <file://h/C:/a/b>
 <file:\\\\//>
 <file:\\\\\\\\>
@@ -64,13 +59,5 @@
 <non-spec:/> set pathname to <//p>
 <non-spec:/.//> set pathname to <p>
 <https://domain.com:3000> set port to <\n\n\t\t>
-<data:space ?query> set search to <>
-<sc:space ?query> set search to <>
-<data:space  ?query#fragment> set search to <>
-<sc:space  ?query#fragment> set search to <>
 <non-spec:/.//p> set hostname to <h>
 <non-spec:/.//p> set hostname to <>
-<data:space                                                                                                                                  #fragment> set hash to <>
-<sc:space    #fragment> set hash to <>
-<data:space  ?query#fragment> set hash to <>
-<sc:space  ?query#fragment> set hash to <>

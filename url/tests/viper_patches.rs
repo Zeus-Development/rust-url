@@ -23,3 +23,20 @@ fn ascii_domain_is_lowercased_whatever_to_ascii_says() {
     let url = Url::parse("http://☕.example/").unwrap();
     assert_eq!(url.host_str(), Some("xn--53h.example"));
 }
+
+// VIPER-PATCH(opaque-path-space)
+#[test]
+fn opaque_path_space_before_query_or_fragment_is_percent_encoded() {
+    let url = Url::parse("non-special:opaque  ?hi").unwrap();
+    assert_eq!(url.as_str(), "non-special:opaque %20?hi");
+    assert_eq!(url.path(), "opaque %20");
+    let url = Url::parse("non-special:opaque\t\t  \r #hi").unwrap();
+    assert_eq!(url.as_str(), "non-special:opaque  %20#hi");
+    let url = Url::parse("non-special:a b").unwrap();
+    assert_eq!(url.as_str(), "non-special:a b");
+    let mut url = Url::parse("sc:space  ?query#fragment").unwrap();
+    url::quirks::set_search(&mut url, "");
+    assert_eq!(url.as_str(), "sc:space %20#fragment");
+    url::quirks::set_hash(&mut url, "");
+    assert_eq!(url.as_str(), "sc:space %20");
+}
