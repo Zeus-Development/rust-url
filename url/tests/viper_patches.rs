@@ -61,3 +61,25 @@ fn blob_origin_is_its_path_origin_only_for_http_https_and_file() {
         assert_eq!(origin(opaque), "null", "{}", opaque);
     }
 }
+
+fn href(input: &str, base: Option<&str>) -> String {
+    let base = base.map(|base| Url::parse(base).unwrap());
+    Url::options()
+        .base_url(base.as_ref())
+        .parse(input)
+        .unwrap()
+        .to_string()
+}
+
+// VIPER-PATCH(file-empty-segments)
+#[test]
+fn file_url_keeps_leading_empty_segments() {
+    assert_eq!(href("file:////foo", None), "file:////foo");
+    assert_eq!(href("file://localhost////foo", None), "file://////foo");
+    assert_eq!(href("file://spider///", None), "file://spider///");
+    assert_eq!(href("file:.//p", None), "file:////p");
+    assert_eq!(href("file:///w|/m", None), "file:///w:/m");
+    assert_eq!(href("file:\\\\\\\\?fox", None), "file:////?fox");
+    assert_eq!(href("file:///a/b", None), "file:///a/b");
+    assert_eq!(href("file://host/a", None), "file://host/a");
+}

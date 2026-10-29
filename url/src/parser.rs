@@ -520,16 +520,30 @@ impl Parser<'_> {
                 self.serialization.push_str("file://");
                 let scheme_end = "file".len() as u32;
                 let host_start = "file://".len() as u32;
-                let (path_start, host, remaining) = self.parse_file_host(input_after_next_char)?;
+                let (not_drive_letter, host, remaining) =
+                    self.parse_file_host(input_after_next_char)?;
                 let host_end = to_u32(self.serialization.len())?;
                 let mut has_host = !matches!(host, HostInternal::None);
-                let remaining = if path_start {
-                    self.parse_path_start(SchemeType::File, &mut has_host, remaining)
+                // VIPER-PATCH(file-empty-segments): after a host, empty or not,
+                // the file host state goes to the path start state, which takes
+                // one / or \ and keeps the empty segments after it; after a
+                // drive letter buffer the path state starts at the buffer.
+                let path_start = self.serialization.len();
+                self.serialization.push('/');
+                let remaining = if not_drive_letter {
+                    match remaining.split_first() {
+                        (Some('/'), rest) => rest,
+                        (Some('\\'), rest) => {
+                            self.log_violation(SyntaxViolation::Backslash);
+                            rest
+                        }
+                        _ => remaining,
+                    }
                 } else {
-                    let path_start = self.serialization.len();
-                    self.serialization.push('/');
-                    self.parse_path(SchemeType::File, &mut has_host, path_start, remaining)
+                    remaining
                 };
+                let remaining =
+                    self.parse_path(SchemeType::File, &mut has_host, path_start, remaining);
 
                 // VIPER-PATCH(file-drive-host): upstream rust-url 00a6ce5 (#1127)
                 // by msrd0, MIT OR Apache-2.0: a file host stays when the path
@@ -1043,25 +1057,21 @@ impl Parser<'_> {
         &mut self,
         input: Input<'i>,
     ) -> ParseResult<(bool, HostInternal, Input<'i>)> {
-        let has_host;
-        let (_, host_str, remaining) = Parser::file_host(input)?;
+        // VIPER-PATCH(file-empty-segments): returns file_host's flag, false
+        // when the buffer is a Windows drive letter, not whether a host is set.
+        let (not_drive_letter, host_str, remaining) = Parser::file_host(input)?;
         let host = if host_str.is_empty() {
-            has_host = false;
             HostInternal::None
         } else {
             match Host::parse_cow(host_str)? {
-                Host::Domain(ref d) if d == "localhost" => {
-                    has_host = false;
-                    HostInternal::None
-                }
+                Host::Domain(ref d) if d == "localhost" => HostInternal::None,
                 host => {
                     write!(&mut self.serialization, "{host}").unwrap();
-                    has_host = true;
                     host.into()
                 }
             }
         };
-        Ok((has_host, host, remaining))
+        Ok((not_drive_letter, host, remaining))
     }
 
     pub fn file_host(input: Input<'_>) -> ParseResult<(bool, Cow<'_, str>, Input<'_>)> {
@@ -1353,16 +1363,8 @@ impl Parser<'_> {
                 break;
             }
         }
-        if scheme_type.is_file() {
-            // while url’s path’s size is greater than 1
-            // and url’s path[0] is the empty string,
-            // validation error, remove the first item from url’s path.
-            //FIXME: log violation
-            let path = self.serialization.split_off(path_start);
-            self.serialization.push('/');
-            self.serialization.push_str(path.trim_start_matches('/'));
-        }
-
+        // VIPER-PATCH(file-empty-segments): the URL Standard's path state no
+        // longer removes a file URL's leading empty segments.
         input
     }
 
