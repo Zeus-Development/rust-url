@@ -19,8 +19,14 @@ use percent_encoding::{percent_encode, utf8_percent_encode, AsciiSet, CONTROLS};
 /// https://url.spec.whatwg.org/#fragment-percent-encode-set
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
 
+/// https://url.spec.whatwg.org/#query-percent-encode-set
+const QUERY: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
+const SPECIAL_QUERY: &AsciiSet = &QUERY.add(b'\'');
+
 /// https://url.spec.whatwg.org/#path-percent-encode-set
-const PATH: &AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
+// VIPER-PATCH(caret-path): upstream rust-url 25137be (#1141) by Charles
+// Samborski, MIT OR Apache-2.0: the path percent-encode set has ^.
+const PATH: &AsciiSet = &QUERY.add(b'?').add(b'^').add(b'`').add(b'{').add(b'}');
 
 /// https://url.spec.whatwg.org/#userinfo-percent-encode-set
 pub(crate) const USERINFO: &AsciiSet = &PATH
@@ -32,7 +38,6 @@ pub(crate) const USERINFO: &AsciiSet = &PATH
     .add(b'[')
     .add(b'\\')
     .add(b']')
-    .add(b'^')
     .add(b'|');
 
 pub(crate) const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/').add(b'%');
@@ -40,10 +45,6 @@ pub(crate) const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/').add(b'%');
 // The backslash (\) character is treated as a path separator in special URLs
 // so it needs to be additionally escaped in that case.
 pub(crate) const SPECIAL_PATH_SEGMENT: &AsciiSet = &PATH_SEGMENT.add(b'\\');
-
-// https://url.spec.whatwg.org/#query-state
-const QUERY: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
-const SPECIAL_QUERY: &AsciiSet = &QUERY.add(b'\'');
 
 pub type ParseResult<T> = Result<T, ParseError>;
 

@@ -55,8 +55,6 @@
 <blob:ws://example.org/>
 <blob:wss://example.org/>
 <file://xn--/p>
-<foo://host/ !\"$%&\'()*+,-./:;<=>@[\\]^_`{|}~>
-<wss://host/ !\"$%&\'()*+,-./:;<=>@[\\]^_`{|}~>
 <https://xn--/>
 <///test> against <http://example.org/>
 <///\\//\\//test> against <http://example.org/>
@@ -70,7 +68,6 @@
 <\\/a> against <foo://foo/a>
 <\\\\a> against <foo://foo/a>
 <foo:///some/path> set pathname to <>
-<a:/> set pathname to <\u{0}\u{1}\t\n\r\u{1f} !\"#$%&\'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~\u{7f}\u{80}\u{81}\u{c9}\u{e9}>
 <file://monkey/> set pathname to <\\\\>
 <file:///unicorn> set pathname to <//\\/>
 <file:///unicorn> set pathname to <//monkey/..//>
