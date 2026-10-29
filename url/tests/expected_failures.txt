@@ -1,3 +1,17 @@
+# VIPER-PATCH(wpt-vectors): the cases url 2.5.8 fails in web-platform-tests at
+# a50a958a6e4c822d7330aa08447f345e85c67c99; each patch removes the cases it fixes.
+<file:///w|/m>
+<non-special:opaque  ?hi>
+<non-special:opaque  #hi>
+<non-special:opaque \t\t  \t#hi>
+<non-special:opaque \t\t  #hi>
+<non-special:opaque\t\t  \r #hi>
+<http://a.b.c.xn--pokxncvks>
+<http://10.0.0.xn--pokxncvks>
+<http://a.b.c.XN--pokxncvks>
+<http://a.b.c.Xn--pokxncvks>
+<http://10.0.0.XN--pokxncvks>
+<http://10.0.0.xN--pokxncvks>
 </> against <file://h/C:/a/b>
 <file:\\\\//>
 <file:\\\\\\\\>
@@ -19,6 +33,8 @@
 <C|\n/> against <file://host/dir/file>
 <C|\\> against <file://host/dir/file>
 </c:/foo/bar> against <file://host/path>
+<..> against <abc://x/y/z/C:/>
+<..> against <file://x/C:/>
 <file://example.net/C:/>
 <file://1.2.3.4/C:/>
 <file://[1::8]/C:/>
@@ -34,10 +50,27 @@
 <file:///.//> against <file:////>
 <file:.//p>
 <file:/.//p>
-<non-spec:/.//p> set hostname to <h>
-<non-spec:/.//p> set hostname to <>
+<blob:blob:https://example.org/>
+<blob:ftp://host/path>
+<blob:ws://example.org/>
+<blob:wss://example.org/>
+<file://xn--/p>
+<foo://host/ !\"$%&\'()*+,-./:;<=>@[\\]^_`{|}~>
+<wss://host/ !\"$%&\'()*+,-./:;<=>@[\\]^_`{|}~>
+<https://xn--/>
+<///test> against <http://example.org/>
+<///\\//\\//test> against <http://example.org/>
+<///example.org/path> against <http://example.org/>
+<///example.org/../path> against <http://example.org/>
+<///example.org/../../> against <http://example.org/>
+<///example.org/../path/../../> against <http://example.org/>
+<///example.org/../path/../../path> against <http://example.org/>
+</\\//\\/a/../> against <file:///>
+<\\a> against <foo://foo/a>
+<\\/a> against <foo://foo/a>
+<\\\\a> against <foo://foo/a>
 <foo:///some/path> set pathname to <>
-<file:///var/log/system.log> set href to <http://0300.168.0xF0>
+<a:/> set pathname to <\u{0}\u{1}\t\n\r\u{1f} !\"#$%&\'()*+,-./09:;<=>?@AZ[\\]^_`az{|}~\u{7f}\u{80}\u{81}\u{c9}\u{e9}>
 <file://monkey/> set pathname to <\\\\>
 <file:///unicorn> set pathname to <//\\/>
 <file:///unicorn> set pathname to <//monkey/..//>
@@ -45,3 +78,16 @@
 <non-spec:/> set pathname to </..//p>
 <non-spec:/> set pathname to <//p>
 <non-spec:/.//> set pathname to <p>
+<https://domain.com:3000> set port to <\n\n\t\t>
+<data:space ?query> set search to <>
+<sc:space ?query> set search to <>
+<data:space  ?query#fragment> set search to <>
+<sc:space  ?query#fragment> set search to <>
+<https://example.com/> set host to <xn-->
+<non-spec:/.//p> set hostname to <h>
+<non-spec:/.//p> set hostname to <>
+<https://example.com/> set hostname to <xn-->
+<data:space                                                                                                                                  #fragment> set hash to <>
+<sc:space    #fragment> set hash to <>
+<data:space  ?query#fragment> set hash to <>
+<sc:space  ?query#fragment> set hash to <>

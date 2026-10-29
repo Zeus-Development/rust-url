@@ -92,6 +92,9 @@ struct UrlTestOk {
     pathname: String,
     search: String,
     hash: String,
+    // VIPER-PATCH(wpt-vectors): WPT's url-origin.any.js checks origin when
+    // a case names one.
+    origin: Option<String>,
 }
 
 #[derive(Debug, serde_derive::Deserialize)]
@@ -136,8 +139,10 @@ fn main() {
         }
     }
 
+    // VIPER-PATCH(wpt-vectors): lines starting with # are comments.
     let mut expected_failures = include_str!("expected_failures.txt")
         .lines()
+        .filter(|line| !line.starts_with('#'))
         .collect::<Vec<_>>();
 
     let mut errors = vec![];
@@ -378,6 +383,16 @@ fn check_url_ok(res: Result<Url, String>, ok: UrlTestOk) -> Result<(), String> {
         return Err(format!("expected hash {:?}, but got {:?}", ok.hash, hash));
     }
 
+    // VIPER-PATCH(wpt-vectors)
+    if let Some(expected_origin) = ok.origin {
+        let origin = url::quirks::origin(&url);
+        if origin != expected_origin {
+            return Err(format!(
+                "expected origin {expected_origin:?}, but got {origin:?}"
+            ));
+        }
+    }
+
     Ok(())
 }
 
@@ -392,6 +407,10 @@ fn run_setter_test(
     let mut url = Url::parse(&href).map_err(|e| format!("errored while parsing href: {e}"))?;
 
     match kind {
+        // VIPER-PATCH(wpt-vectors): WPT's href setter cases.
+        "href" => {
+            url::quirks::set_href(&mut url, &new_value).ok();
+        }
         "protocol" => {
             url::quirks::set_protocol(&mut url, &new_value).ok();
         }
