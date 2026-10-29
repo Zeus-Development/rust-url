@@ -88,6 +88,28 @@ impl Host<String> {
     }
 }
 
+// VIPER-PATCH(ascii-domain): https://url.spec.whatwg.org/#forbidden-domain-code-point
+fn is_forbidden_domain_byte(byte: u8) -> bool {
+    byte <= b' ' || byte == 0x7F || b"#%/:<>?@[\\]^|".contains(&byte)
+}
+
+// VIPER-PATCH(ascii-domain): an ASCII domain, lowercased, borrowed when it has
+// no uppercase letter.
+fn ascii_lowercase(domain: Cow<'_, [u8]>) -> Cow<'_, str> {
+    match domain {
+        Cow::Borrowed(bytes) if !bytes.iter().any(u8::is_ascii_uppercase) => {
+            // ASCII bytes are UTF-8.
+            Cow::Borrowed(core::str::from_utf8(bytes).unwrap_or_default())
+        }
+        domain => Cow::Owned(
+            domain
+                .iter()
+                .map(|&byte| char::from(byte.to_ascii_lowercase()))
+                .collect(),
+        ),
+    }
+}
+
 impl<'a> Host<Cow<'a, str>> {
     pub(crate) fn parse_cow(input: Cow<'a, str>) -> Result<Self, ParseError> {
         if input.starts_with('[') {
@@ -106,7 +128,18 @@ impl<'a> Host<Cow<'a, str>> {
             },
         };
 
-        let domain = idna::domain_to_ascii_from_cow(domain, idna::AsciiDenyList::URL)?;
+        // VIPER-PATCH(ascii-domain): the URL Standard's domain to ASCII with
+        // beStrict false returns an ASCII domain lowercased, whatever UTS 46
+        // ToASCII says of it (an xn-- label that is not valid Punycode, for
+        // one), and fails only on a forbidden domain code point.
+        let domain = if domain.is_ascii() {
+            if domain.iter().copied().any(is_forbidden_domain_byte) {
+                return Err(ParseError::IdnaError);
+            }
+            ascii_lowercase(domain)
+        } else {
+            idna::domain_to_ascii_from_cow(domain, idna::AsciiDenyList::URL)?
+        };
 
         if domain.is_empty() {
             return Err(ParseError::EmptyHost);
