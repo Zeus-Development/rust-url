@@ -116,3 +116,13 @@ fn drive_letter_is_kept_for_file_urls_only() {
     assert_eq!(href("..", Some("abc://x/y/z/C:/")), "abc://x/y/z/");
     assert_eq!(href("..", Some("file:///C:/")), "file:///C:/");
 }
+
+// VIPER-PATCH(port-setter-tabs)
+#[test]
+fn port_setter_with_only_tabs_and_newlines_keeps_the_port() {
+    let mut url = Url::parse("https://domain.com:3000").unwrap();
+    assert!(url::quirks::set_port(&mut url, "\n\n\t\t").is_err());
+    assert_eq!(url.port(), Some(3000));
+    url::quirks::set_port(&mut url, "").unwrap();
+    assert_eq!(url.port(), None);
+}

@@ -253,6 +253,13 @@ pub fn set_port(url: &mut Url, new_port: &str) -> Result<(), ()> {
         if !url.has_host() || url.host() == Some(Host::Domain("")) || scheme == "file" {
             return Err(());
         }
+        // VIPER-PATCH(port-setter-tabs): the URL Standard sets the port to
+        // null only for the empty string; a value that is only tabs and
+        // newlines reaches the port state as EOF with an empty buffer, which
+        // returns with the port unchanged.
+        if !new_port.is_empty() && new_port.chars().all(|c| matches!(c, '\t' | '\n' | '\r')) {
+            return Err(());
+        }
         result = Parser::parse_port(
             Input::new_no_trim(new_port),
             || default_port(scheme),

@@ -5,6 +5,5 @@
 <non-spec:/> set pathname to </..//p>
 <non-spec:/> set pathname to <//p>
 <non-spec:/.//> set pathname to <p>
-<https://domain.com:3000> set port to <\n\n\t\t>
 <non-spec:/.//p> set hostname to <h>
 <non-spec:/.//p> set hostname to <>
